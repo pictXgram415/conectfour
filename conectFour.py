@@ -55,9 +55,9 @@ class Application(tk.Frame):
         rightArrow = tk.Button(self.bottomButtons)
         rightArrow['text'] = u'→右へ'
         self.bottomButtons.pack(pady=10)
-        leftArrow.pack(side='left')
-        enter.pack(side='left')
-        rightArrow.pack(side='left')
+        leftArrow.pack(side='left', padx=10)
+        enter.pack(side='left', padx=10)
+        rightArrow.pack(side='left', padx=10)
     ###
     # sideFrame
     ###
