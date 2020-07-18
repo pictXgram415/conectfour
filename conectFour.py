@@ -33,7 +33,7 @@ class Application(tk.Frame):
                             height=self.CANVAS_HEIGHT+1, bg='yellow')
         self.c0.pack(pady=5)
         imageOpen = Image.open(
-            'Y:/make/netproPy/netopro/conectFour/images/RED_COIN.png')
+            './netopro/conectFour/images/RED_COIN.png')
         imageOpen = imageOpen.resize(
             (int(self.CANVAS_HEIGHT/7), int(self.CANVAS_HEIGHT/7)))
         self.image = itk.PhotoImage(imageOpen)

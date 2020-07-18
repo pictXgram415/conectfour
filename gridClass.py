@@ -20,7 +20,7 @@ if __name__ == '__main__':
                    height=CANVAS_HEIGHT+1, bg='yellow')
     c0.pack()
     imageOpen = Image.open(
-        'Y:/make/netproPy/netopro/conectFour/images/RED_COIN.png')
+        './netopro/conectFour/images/RED_COIN.png')
     imageOpen = imageOpen.resize((int(CANVAS_HEIGHT/7), int(CANVAS_HEIGHT/7)))
     image = itk.PhotoImage(imageOpen)
     for x in range(7):
