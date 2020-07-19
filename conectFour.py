@@ -1,6 +1,6 @@
 import tkinter as tk
 from PIL import Image, ImageTk as itk
-import gridClass as gridClass
+from gridClass import GridClass
 
 
 class Application(tk.Frame):
@@ -12,6 +12,7 @@ class Application(tk.Frame):
 
         self.CANVAS_WIDTH = 400
         self.CANVAS_HEIGHT = 400
+
         self.gameFrame = tk.Frame(self)
         self.sideFrame = tk.Frame(self)
 
@@ -32,14 +33,7 @@ class Application(tk.Frame):
         self.c0 = tk.Canvas(self.gameFrame, width=self.CANVAS_WIDTH+1,
                             height=self.CANVAS_HEIGHT+1, bg='yellow')
         self.c0.pack(pady=5)
-        imageOpen = Image.open(
-            './netopro/conectFour/images/RED_COIN.png')
-        imageOpen = imageOpen.resize(
-            (int(self.CANVAS_HEIGHT/7), int(self.CANVAS_HEIGHT/7)))
-        self.image = itk.PhotoImage(imageOpen)
-        for x in range(7):
-            for y in range(7):
-                gridClass.make_cell(x, y, self.image, self.c0)
+        self.gc = GridClass(self.c0)
 
     def show_opponent_name(self):
         self.label = tk.Label(self.gameFrame)
@@ -50,10 +44,13 @@ class Application(tk.Frame):
         self.bottomButtons = tk.Frame(self.gameFrame)
         leftArrow = tk.Button(self.bottomButtons)
         leftArrow['text'] = u'←左へ'
+        leftArrow['command'] = self.gc.move_left
         enter = tk.Button(self.bottomButtons)
         enter['text'] = u'決定'
+        enter['command'] = self.gc.choice_cell
         rightArrow = tk.Button(self.bottomButtons)
         rightArrow['text'] = u'→右へ'
+        rightArrow['command'] = self.gc.move_right
         self.bottomButtons.pack(pady=10)
         leftArrow.pack(side='left', padx=10)
         enter.pack(side='left', padx=10)
