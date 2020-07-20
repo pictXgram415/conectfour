@@ -11,7 +11,7 @@ class Application(tk.Frame):
         master.geometry("650x500")
 
         self.master = master
-        self.status = 0
+        self.status = -1
 
         self.CANVAS_WIDTH = 400
         self.CANVAS_HEIGHT = 400
@@ -52,7 +52,7 @@ class Application(tk.Frame):
         enter['text'] = u'決定'
 
         enter['command'] = lambda: [
-            self.gc.choice_cell(), print(self.gc.get_status())]
+            self.gc.choice_cell()]
         rightArrow = tk.Button(self.bottomButtons)
         rightArrow['text'] = u'→右へ'
         rightArrow['command'] = self.gc.move_right
@@ -84,13 +84,18 @@ class Application(tk.Frame):
         self.disconnectButton.pack(pady=10)
 
     def logs(self, c1, col, log):
-        c1.create_text(5, col*20+2, text=log, anchor=tk.NW)
+        c1.create_text(5, col * 20 + 2, text=log, anchor=tk.NW)
 
 
 ###
 # mainWindow
 ###
-if __name__ == "__main__":
+
+def start():
     root = tk.Tk()
     app = Application(master=root)
     app.mainloop()
+
+
+if __name__ == "__main__":
+    start()

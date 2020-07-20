@@ -34,8 +34,6 @@ class Start(tk.Frame):
         self.master.destroy()
         root = tk.Tk()
         game = Application(master=root)
-        if game.status == 2:
-            print("aaa")
         game.mainloop()
 
 

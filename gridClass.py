@@ -7,13 +7,13 @@ CANVAS_WIDTH = 400
 CANVAS_HEIGHT = 400
 
 
-class GridClass():
+class GridClass(tk.Frame):
     CANVAS_WIDTH = 400
     CANVAS_HEIGHT = 400
     IMG_RED_STR = "./netopro/conectFour/images/RED_COIN.png"
     IMG_YEL_STR = "./netopro/conectFour/images/YELLOW_COIN.png"
     IMG_BLANK_STR = "./netopro/conectFour/images/BLANK.png"
-    STATUS_STR = ["red", "yellow", "blank"]
+    STATUS_STR = ["red", "yellow", "th"]
     deeps = {}
     stage = True
 
@@ -24,39 +24,35 @@ class GridClass():
         self.IMG_BLANK = self.read_image(self.IMG_BLANK_STR)
         self.c0 = c0
         self.currentTag = 3
-        self.status = -1  # 0:red,1:yel,2:fin
+        self.status = status  # 0:red,1:yel,2:fin,-1:start_red
         self.pMaster = pMaster  # parent master
         self.threadGame = None
+
         for i in range(7):
             self.deeps[i] = 6
         for y in range(7):
             for x in range(7):
                 self.make_cell(x, y)
+        if status == 1:  # 1ならサーバー(後攻)なのでゲームを動かさない
+            self.stage = False
         self.game()
 
     def game(self):
-        self.stage = False
-        if self.status == 0:
-            print("y")
-            self.status = 1
-            self.start_game_y()
-        elif self.status == 1 or self.status == -1:
-            print("r")
-            self.status = 0
-            self.start_game_r()
-
-    def test(self):
-        print("test")
-
-    def game_thread(self):
-        if not self.threadGame:
-            self.threadGame = threading.Thread(target=self.game)
-            self.threadGame.start()
-            print("start")
-        else:
-            self.threadGame.join()
-            self.threadGame = None
-            print("end")
+        if self.stage:
+            if self.status == 0:
+                self.stage = False
+                print("y")
+                self.status = 1
+                self.opponent_y(1)
+            elif self.status == 1 or self.status == -1:
+                self.stage = False
+                print("r")
+                self.status = 0
+                self.start_game_r()
+        try:
+            self.after(500, self.game)
+        except:
+            pass
 
     def make_cell(self, x, y):
         x1 = x * self.CANVAS_HEIGHT / 7 + 2
@@ -82,7 +78,7 @@ class GridClass():
         leftArrow['command'] = self.move_left
         enter = tk.Button(bottomButtons)
         enter['text'] = u'決定'
-        enter['command'] = self.choice_cell
+        enter['command'] = lambda: [self.choice_cell()]
         rightArrow = tk.Button(bottomButtons)
         rightArrow['text'] = u'→右へ'
         rightArrow['command'] = self.move_right
@@ -90,17 +86,30 @@ class GridClass():
         leftArrow.pack(side='left', padx=10)
         enter.pack(side='left', padx=10)
         rightArrow.pack(side='left', padx=10)
+        extra = tk.Button(root)
 
     def start_game_r(self):
         self.change_red(self.currentTag)
 
-    def start_game_y(self):  # currentTagの値だけもらえばできる
-        time.sleep(1)
-        self.currentTag = 1
+    def start_game_y(self):
+        self.change_yel(self.currentTag)
+
+    def opponent_r(self, tag):
+        self.currentTag = tag
+        self.set_stage(False)
         self.choice_cell()
 
-    def get_status(self):
-        return self.status
+    def opponent_y(self, tag):  # currentTagの値だけもらえばできる
+        time.sleep(1)
+        self.currentTag = tag
+        self.set_stage(False)
+        self.choice_cell()
+
+    def set_status(self, num):
+        self.status = num
+
+    def set_stage(self, flg):
+        self.stage = flg
 
     def change_red(self, tag):
         self.c0.itemconfig(str(tag)+'th', image=self.IMG_RED)
@@ -112,24 +121,26 @@ class GridClass():
         self.c0.itemconfig(str(tag)+'th', image=self.IMG_BLANK)
 
     def move_left(self):
-        if 0 < self.currentTag and self.status < 2:
+        if 0 < self.currentTag and self.status == 0:
             self.clear(self.currentTag)
             self.currentTag -= 1
             self.change_red(self.currentTag)
 
     def move_right(self):
-        if self.currentTag < 6and self.status < 2:
+        if self.currentTag < 6 and self.status == 0:
             self.clear(self.currentTag)
             self.currentTag += 1
             self.change_red(self.currentTag)
 
     def choice_cell(self):
-        if self.deeps[self.currentTag] > 0:
+        if self.deeps[self.currentTag] > 0 and not self.stage:
             self.stage = True
             p = self.currentTag + self.deeps[self.currentTag] * 7
             if self.status == 0:
+                print("red")
                 self.change_red(p)
             elif self.status == 1:
+                print("yel")
                 self.change_yel(p)
             self.clear(self.currentTag)
             self.deeps[self.currentTag] -= 1
@@ -143,15 +154,14 @@ class GridClass():
                 tk.Label(
                     winWindow, text=self.STATUS_STR[self.status]+u'が勝利しました').pack()
                 b = tk.Button(winWindow, text="閉じる", command=lambda: [
-                              winWindow.destroy(), self.pMaster.destroy()])
+                              winWindow.destroy(), self.pMaster.destroy(), self.set_status(None)])
                 b.pack()
 
                 self.status = 2
             self.currentTag = 3
-            # self.game_thread()
 
     def isCheck_win(self):
-        if self.isCheck_row() or self.isCheck_col() or self.isCheck_slash(1) or self.isCheck_slash(-1):
+        if self.isCheck_row() or self.isCheck_col() or self.isCheck_slash(1) or self.isCheck_slash(-1) or self.isCheck_full():
             return True
         else:
             return False
@@ -198,17 +208,32 @@ class GridClass():
                 return True
         return False
 
+    def isCheck_full(self):
+        count = 0
+        for i in range(7):
+            for j in range(7):
+                p = j + i * 7
+                if self.c0.find_withtag(str(p) + self.STATUS_STR[2]):
+                    count += 1
+        if count < 7:
+            return True
+        else:
+            return False
 
-if __name__ == '__main__':
+
+def start():
     root = tk.Tk()
     root.title('test')
-    root.geometry("800x450")
+    root.geometry("600x450")
     c0 = tk.Canvas(root, width=CANVAS_WIDTH+1,
                    height=CANVAS_HEIGHT+1, bg='yellow')
     c0.pack()
-    gl = GridClass(c0, root, 0)
-    # gl.set_images('./netopro/conectFour/images/RED_COIN.png')
-    # gl.set_images("./netopro/conectFour/images/YELLOW_COIN.png")
+    gl = GridClass(c0, root, -1)
 
     gl.show_buttons(root)
     root.mainloop()
+
+
+if __name__ == '__main__':
+
+    start()
