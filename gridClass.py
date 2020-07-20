@@ -1,5 +1,7 @@
 import tkinter as tk
 from PIL import Image, ImageTk as itk
+import time
+import threading
 
 CANVAS_WIDTH = 400
 CANVAS_HEIGHT = 400
@@ -11,22 +13,50 @@ class GridClass():
     IMG_RED_STR = "./netopro/conectFour/images/RED_COIN.png"
     IMG_YEL_STR = "./netopro/conectFour/images/YELLOW_COIN.png"
     IMG_BLANK_STR = "./netopro/conectFour/images/BLANK.png"
+    STATUS_STR = ["red", "yellow", "blank"]
     deeps = {}
-    mycoins = {}
+    stage = True
 
-    def __init__(self, c0):
+    def __init__(self, c0, pMaster, status):
         super().__init__()
         self.IMG_RED = self.read_image(self.IMG_RED_STR)
         self.IMG_YEL = self.read_image(self.IMG_YEL_STR)
         self.IMG_BLANK = self.read_image(self.IMG_BLANK_STR)
         self.c0 = c0
         self.currentTag = 3
+        self.status = -1  # 0:red,1:yel,2:fin
+        self.pMaster = pMaster  # parent master
+        self.threadGame = None
         for i in range(7):
             self.deeps[i] = 6
         for y in range(7):
             for x in range(7):
                 self.make_cell(x, y)
-        self.start_game_r()
+        self.game()
+
+    def game(self):
+        self.stage = False
+        if self.status == 0:
+            print("y")
+            self.status = 1
+            self.start_game_y()
+        elif self.status == 1 or self.status == -1:
+            print("r")
+            self.status = 0
+            self.start_game_r()
+
+    def test(self):
+        print("test")
+
+    def game_thread(self):
+        if not self.threadGame:
+            self.threadGame = threading.Thread(target=self.game)
+            self.threadGame.start()
+            print("start")
+        else:
+            self.threadGame.join()
+            self.threadGame = None
+            print("end")
 
     def make_cell(self, x, y):
         x1 = x * self.CANVAS_HEIGHT / 7 + 2
@@ -37,7 +67,6 @@ class GridClass():
 
         self.c0.create_image(x1, y1, image=self.IMG_BLANK,
                              tags=str(num) + 'th', anchor=tk.NW)
-        self.mycoins[num] = 0
 
     def read_image(self, img):
         imageOpen = Image.open(img)
@@ -47,20 +76,31 @@ class GridClass():
         return image
 
     def show_buttons(self, root):
-        self.bottomButtons = tk.Frame(root)
-        leftArrow = tk.Button(self.bottomButtons)
+        bottomButtons = tk.Frame(root)
+        leftArrow = tk.Button(bottomButtons)
         leftArrow['text'] = u'←左へ'
         leftArrow['command'] = self.move_left
-        enter = tk.Button(self.bottomButtons)
+        enter = tk.Button(bottomButtons)
         enter['text'] = u'決定'
-        enter['command'] = lambda: self.choice_cell()
-        rightArrow = tk.Button(self.bottomButtons)
+        enter['command'] = self.choice_cell
+        rightArrow = tk.Button(bottomButtons)
         rightArrow['text'] = u'→右へ'
         rightArrow['command'] = self.move_right
-        self.bottomButtons.pack(pady=10)
+        bottomButtons.pack(pady=10)
         leftArrow.pack(side='left', padx=10)
         enter.pack(side='left', padx=10)
         rightArrow.pack(side='left', padx=10)
+
+    def start_game_r(self):
+        self.change_red(self.currentTag)
+
+    def start_game_y(self):  # currentTagの値だけもらえばできる
+        time.sleep(1)
+        self.currentTag = 1
+        self.choice_cell()
+
+    def get_status(self):
+        return self.status
 
     def change_red(self, tag):
         self.c0.itemconfig(str(tag)+'th', image=self.IMG_RED)
@@ -71,32 +111,44 @@ class GridClass():
     def clear(self, tag):
         self.c0.itemconfig(str(tag)+'th', image=self.IMG_BLANK)
 
-    def start_game_r(self):
-        self.change_red(self.currentTag)
-
     def move_left(self):
-        if 0 < self.currentTag:
+        if 0 < self.currentTag and self.status < 2:
             self.clear(self.currentTag)
             self.currentTag -= 1
             self.change_red(self.currentTag)
 
     def move_right(self):
-        if self.currentTag < 6:
+        if self.currentTag < 6and self.status < 2:
             self.clear(self.currentTag)
             self.currentTag += 1
             self.change_red(self.currentTag)
 
     def choice_cell(self):
         if self.deeps[self.currentTag] > 0:
-            p = self.currentTag+self.deeps[self.currentTag]*7
-            self.change_red(p)
+            self.stage = True
+            p = self.currentTag + self.deeps[self.currentTag] * 7
+            if self.status == 0:
+                self.change_red(p)
+            elif self.status == 1:
+                self.change_yel(p)
             self.clear(self.currentTag)
             self.deeps[self.currentTag] -= 1
-            self.c0.itemconfigure(str(p) + 'th', tags=str(p) + 'red')
+            self.c0.itemconfigure(
+                str(p) + 'th', tags=str(p) + self.STATUS_STR[self.status])
             if self.isCheck_win():
-                print("win")
+
+                winWindow = tk.Toplevel()
+                winWindow.geometry("200x100")
+                winWindow.title(self.STATUS_STR[self.status]+"win")
+                tk.Label(
+                    winWindow, text=self.STATUS_STR[self.status]+u'が勝利しました').pack()
+                b = tk.Button(winWindow, text="閉じる", command=lambda: [
+                              winWindow.destroy(), self.pMaster.destroy()])
+                b.pack()
+
+                self.status = 2
             self.currentTag = 3
-            self.start_game_r()
+            # self.game_thread()
 
     def isCheck_win(self):
         if self.isCheck_row() or self.isCheck_col() or self.isCheck_slash(1) or self.isCheck_slash(-1):
@@ -108,8 +160,8 @@ class GridClass():
         row = self.deeps[self.currentTag]+1
         check = 0
         for i in range(7):
-            p = i + row*7
-            if self.c0.find_withtag(str(p)+"red"):
+            p = i + row * 7
+            if self.c0.find_withtag(str(p)+self.STATUS_STR[self.status]):
                 check = check * 1 + 1
             else:
                 check = check * 0 + 0
@@ -122,7 +174,7 @@ class GridClass():
         check = 0
         for i in reversed(range(7)):
             p = i * 7 + col
-            if self.c0.find_withtag(str(p)+"red"):
+            if self.c0.find_withtag(str(p)+self.STATUS_STR[self.status]):
                 check = check * 1 + 1
             else:
                 check = check * 0 + 0
@@ -138,7 +190,7 @@ class GridClass():
         for i in reversed(range(7)):
             p = i * 7 + col-(6-row) - count
             count += axis
-            if self.c0.find_withtag(str(p)+"red"):
+            if self.c0.find_withtag(str(p)+self.STATUS_STR[self.status]):
                 check = check * 1 + 1
             else:
                 check = check * 0 + 0
@@ -154,7 +206,7 @@ if __name__ == '__main__':
     c0 = tk.Canvas(root, width=CANVAS_WIDTH+1,
                    height=CANVAS_HEIGHT+1, bg='yellow')
     c0.pack()
-    gl = GridClass(c0)
+    gl = GridClass(c0, root, 0)
     # gl.set_images('./netopro/conectFour/images/RED_COIN.png')
     # gl.set_images("./netopro/conectFour/images/YELLOW_COIN.png")
 

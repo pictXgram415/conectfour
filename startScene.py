@@ -1,10 +1,12 @@
 import tkinter as tk
 from PIL import Image, ImageTk as itk
+from conectFour import Application
 
 
-class Application(tk.Frame):
+class Start(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
+        self.master = master
         master.title("start")
         master.geometry("300x200")
         self.pack()
@@ -25,10 +27,19 @@ class Application(tk.Frame):
     def show_connect_button(self):
         self.connectButton = tk.Button(self)
         self.connectButton['text'] = u'接続する'
+        self.connectButton['command'] = self.correct_button
         self.connectButton.pack()
+
+    def correct_button(self):
+        self.master.destroy()
+        root = tk.Tk()
+        game = Application(master=root)
+        if game.status == 2:
+            print("aaa")
+        game.mainloop()
 
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = Application(master=root)
+    app = Start(master=root)
     app.mainloop()

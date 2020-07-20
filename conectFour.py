@@ -10,6 +10,9 @@ class Application(tk.Frame):
         master.title("game")
         master.geometry("650x500")
 
+        self.master = master
+        self.status = 0
+
         self.CANVAS_WIDTH = 400
         self.CANVAS_HEIGHT = 400
 
@@ -33,7 +36,7 @@ class Application(tk.Frame):
         self.c0 = tk.Canvas(self.gameFrame, width=self.CANVAS_WIDTH+1,
                             height=self.CANVAS_HEIGHT+1, bg='yellow')
         self.c0.pack(pady=5)
-        self.gc = GridClass(self.c0)
+        self.gc = GridClass(self.c0, self.master, self.status)
 
     def show_opponent_name(self):
         self.label = tk.Label(self.gameFrame)
@@ -47,7 +50,9 @@ class Application(tk.Frame):
         leftArrow['command'] = self.gc.move_left
         enter = tk.Button(self.bottomButtons)
         enter['text'] = u'決定'
-        enter['command'] = self.gc.choice_cell
+
+        enter['command'] = lambda: [
+            self.gc.choice_cell(), print(self.gc.get_status())]
         rightArrow = tk.Button(self.bottomButtons)
         rightArrow['text'] = u'→右へ'
         rightArrow['command'] = self.gc.move_right
