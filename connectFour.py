@@ -5,13 +5,15 @@ from gridClass import GridClass
 
 class Application(tk.Frame):
 
-    def __init__(self, master=None):
+    def __init__(self, myName, role, master=None):
         super().__init__(master)
         master.title("game")
         master.geometry("650x500")
 
         self.master = master
-        self.status = -1
+        self.role = role
+        self.myName = myName
+        self.textCol = 0
 
         self.CANVAS_WIDTH = 400
         self.CANVAS_HEIGHT = 400
@@ -24,10 +26,10 @@ class Application(tk.Frame):
         self.show_opponent_name()
         self.game_scene()
         self.show_buttons()
-        self.sideFrame.pack(side='left', padx=10)
-        self.show_log_name()
-        self.show_log_text()
-        self.show_disconnect_button()
+        # self.sideFrame.pack(side='left', padx=10)
+        # self.show_log_name()
+        # self.show_log_text()
+
     ###
     # gameFrame
     ###
@@ -36,11 +38,12 @@ class Application(tk.Frame):
         self.c0 = tk.Canvas(self.gameFrame, width=self.CANVAS_WIDTH+1,
                             height=self.CANVAS_HEIGHT+1, bg='yellow')
         self.c0.pack(pady=5)
-        self.gc = GridClass(self.c0, self.master, self.status)
+        self.gc = GridClass(self.c0, self.master, self.role, self.myName)
+        self.label['text'] = u'相手：'+self.gc.opponentName+u'さん'
 
     def show_opponent_name(self):
         self.label = tk.Label(self.gameFrame)
-        self.label['text'] = u'相手：'+u'defoult opponent name'+u'さん'
+        #self.label['text'] = u'相手：'+self.gc.opponentName+u'さん'
         self.label.pack(pady=5)
 
     def show_buttons(self):
@@ -71,29 +74,26 @@ class Application(tk.Frame):
 
     def show_log_text(self):
         self.c1 = tk.Canvas(self.sideFrame, width=self.CANVAS_WIDTH/2,
-                            height=self.CANVAS_HEIGHT)
+                            height=self.CANVAS_HEIGHT*2)
         self.c1.pack(pady=5)
         self.c1.create_rectangle(2, 2, self.CANVAS_WIDTH/2,
                                  self.CANVAS_HEIGHT, fill='white', tag='baseSheet')
         for i in range(5):
-            self.logs(self.c1, i, 'test')
+            self.logs('test')
 
-    def show_disconnect_button(self):
-        self.disconnectButton = tk.Button(self.sideFrame)
-        self.disconnectButton['text'] = u'切断'
-        self.disconnectButton.pack(pady=10)
-
-    def logs(self, c1, col, log):
-        c1.create_text(5, col * 20 + 2, text=log, anchor=tk.NW)
+    def logs(self, log):
+        self.c1.create_text(5, self.textCol * 20 + 2, text=log, anchor=tk.NW)
+        self.textCol += 1
 
 
 ###
 # mainWindow
 ###
 
+
 def start():
     root = tk.Tk()
-    app = Application(master=root)
+    app = Application("yyyy", 0, master=root)
     app.mainloop()
 
 
